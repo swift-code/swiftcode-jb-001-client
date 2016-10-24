@@ -75,19 +75,90 @@ app.controller('signupCtrl',['$scope','$location','$http',
          sessionStorage.password=response["password"];
          sessionStorage.firstName=response["firstName"];
          sessionStorage.lastName=response["lastName"];
+
          sessionStorage.userId=response["id"];
 
          $location.url('/dashboard');
 
        }
      });
-     request.error(function(data){
-       console.log(data);
-     });
-  }
-
- }]);
+}}]);
 
 app.controller('dashboardCtrl',['$scope','$location','$http',
   function($scope,$location,$http){
+
+    $scope.getProfileData=function()
+    {
+      var request=$http({
+        method:"GET",
+        url:URL+"profile/"+sessionStorage.userId
+      });
+      request.success(function(data){
+        console.log(data);
+      $scope.profileData=angular.fromJson(data);
+    });
+      request.error(function(data){
+        console.log(data);
+      });
+    }
+    $scope.getProfileData();
+    $scope.updateProfile = function() {
+           delete $scope.profileData["connectionRequests"];
+           delete $scope.profileData["connections"];
+           delete $scope.profileData["suggestions"];
+           var request = $http({
+               method: "PUT",
+               url: URL + "profile/" + sessionStorage.userId,
+               data: $scope.profileData
+           });
+           request.success(function(data) {
+               $scope.responseMessage = "Update successful.";
+               $("#dashboardMsgModal").modal('show');
+               $scope.getProfileData();
+           });
+           request.error(function(data) {
+               console.log(data);
+           });
+       }
+       $scope.sendConnectRequest = function(receiverId) {
+              var request = $http({
+                  method: "POST",
+                  url: URL + "request/send/" + sessionStorage.userId+"/"+receiverId
+
+              });
+              request.success(function(data) {
+                  $scope.responseMessage = "Your request has been sent.";
+                  $("#dashboardMsgModal").modal('show');
+                  $scope.getProfileData();
+              });
+              request.error(function(data) {
+                  console.log(data);
+              });
+          }
+
+          $scope.acceptConnectRequest = function(requestId) {
+                 var request = $http({
+                     method: "POST",
+                     url: URL + "request/accept/" + requestId
+
+                 });
+                 request.success(function(data) {
+                     $scope.responseMessage = "Now you're friends!";
+                     $("#dashboardMsgModal").modal('show');
+                     $scope.getProfileData();
+                 });
+                 request.error(function(data) {
+                     console.log(data);
+                 });
+             }
+
+
+                       $scope.logout = function() {
+                           sessionStorage.clear();
+                           $location.path("/login");
+                          }
+
+
+
+
   }]);
